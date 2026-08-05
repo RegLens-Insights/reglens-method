@@ -1,0 +1,178 @@
+{
+  "rubric_version": "2026-07-30.1",
+  "generated_from": "supabase/functions/_shared/scoring.ts",
+  "scale": {
+    "min": 1,
+    "max": 5,
+    "note": "These anchors are shared by every dimension. Nothing distinguishes a 4 on Cost from a 4 on Timeline — a known gap, see RUBRIC.md.",
+    "anchors": [
+      {
+        "score": 5,
+        "label": "Transformative impact, immediate action required"
+      },
+      {
+        "score": 4,
+        "label": "Major changes required"
+      },
+      {
+        "score": 3,
+        "label": "Moderate, manageable changes"
+      },
+      {
+        "score": 2,
+        "label": "Minor adjustments"
+      },
+      {
+        "score": 1,
+        "label": "Minimal impact"
+      }
+    ]
+  },
+  "bills": {
+    "full": {
+      "dimensions": [
+        {
+          "key": "operational",
+          "label": "Operational",
+          "measures": "Changes to how affected businesses must operate",
+          "weight": 0.25
+        },
+        {
+          "key": "compliance",
+          "label": "Compliance",
+          "measures": "New regulatory obligations and reporting burdens",
+          "weight": 0.2
+        },
+        {
+          "key": "cost",
+          "label": "Cost",
+          "measures": "Direct financial impact of complying",
+          "weight": 0.2
+        },
+        {
+          "key": "market_access",
+          "label": "Market Access",
+          "measures": "Effects on the ability to enter or serve markets",
+          "weight": 0.15
+        },
+        {
+          "key": "timeline",
+          "label": "Timeline",
+          "measures": "How soon the impact would be felt",
+          "weight": 0.2
+        }
+      ],
+      "composite": "round2(sum(weight_i * score_i))",
+      "tier_rules": [
+        {
+          "tier": "Critical",
+          "when": "composite >= 4 AND passage_likelihood == \"High\""
+        },
+        {
+          "tier": "High",
+          "when": "composite >= 3.5 OR (composite >= 3 AND passage_likelihood == \"High\")"
+        },
+        {
+          "tier": "Medium",
+          "when": "composite >= 2.5"
+        },
+        {
+          "tier": "Low",
+          "when": "otherwise"
+        }
+      ],
+      "override": {
+        "rule": "passage_likelihood == \"Very Low\" forces tier \"Low\"",
+        "applies": "last, unconditionally, regardless of composite"
+      }
+    },
+    "light": {
+      "dimensions": null,
+      "note": "Triage pass over title, status and jurisdiction only. No independent dimension scores; the composite is the model's own number, clamped but not rounded. Passage likelihood does not affect the tier.",
+      "tier_rules": [
+        {
+          "tier": "Critical",
+          "when": "composite >= 4"
+        },
+        {
+          "tier": "High",
+          "when": "composite >= 3.5"
+        },
+        {
+          "tier": "Medium",
+          "when": "composite >= 2.5"
+        },
+        {
+          "tier": "Low",
+          "when": "otherwise"
+        }
+      ]
+    },
+    "passage_likelihood": [
+      "High",
+      "Medium",
+      "Low",
+      "Very Low"
+    ]
+  },
+  "rules": {
+    "dimensions": [
+      {
+        "key": "operational",
+        "label": "Operational",
+        "measures": "Changes to how affected businesses must operate",
+        "weight": 0.4
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "measures": "New regulatory obligations and reporting burdens",
+        "weight": 0.35
+      },
+      {
+        "key": "cost",
+        "label": "Cost",
+        "measures": "Direct financial impact of complying",
+        "weight": 0.25
+      }
+    ],
+    "composite": "round2(sum(weight_i * score_i))",
+    "tier_rules": [
+      {
+        "tier": "Critical",
+        "when": "composite >= 4"
+      },
+      {
+        "tier": "High",
+        "when": "composite >= 3.5"
+      },
+      {
+        "tier": "Medium",
+        "when": "composite >= 2.5"
+      },
+      {
+        "tier": "Low",
+        "when": "otherwise"
+      }
+    ],
+    "note": "Rules have no passage likelihood — an issued rule is already on its way."
+  },
+  "risk_tiers": [
+    "Critical",
+    "High",
+    "Medium",
+    "Low"
+  ],
+  "normalization": {
+    "dimension_score": "min(5, max(1, round(x)))",
+    "non_finite": 1,
+    "note": "Dimension scores are rounded to integers before weighting.",
+    "fail_safe_defaults": {
+      "passage_likelihood": "Low",
+      "risk_tier": "Low",
+      "bill_category": "substantive",
+      "sectors": [],
+      "principle": "Every default is the least alarming value. A malformed model response can make RegLens under-alarm; by construction it cannot make it over-alarm."
+    }
+  }
+}
