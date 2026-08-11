@@ -19,6 +19,7 @@ verbatim.
 | [rubric.json](rubric.json) | The same values, machine-readable. Generated from the analyzer source. |
 | [PROMPTS.md](PROMPTS.md) | The system prompts sent to the model, verbatim, with the industry taxonomy. |
 | [CHANGELOG.md](CHANGELOG.md) | Every change to the rubric, dated. |
+| [VALIDATION.md](VALIDATION.md) | The backtest: passage-likelihood calls vs. realized outcomes, protocol pre-registered. Refreshed quarterly. |
 
 ## The one thing worth knowing
 

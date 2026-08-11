@@ -1,0 +1,126 @@
+# Refresh VALIDATION.md from RegLens's public validation RPC.
+#
+# Reads get_public_validation() — an anon-callable, deliberately sanitized
+# projection of the nightly passage-likelihood calibration record (aggregate
+# counts and rates per tier, nothing per-bill) — renders it to markdown, and
+# commits only when the record actually moved.
+#
+# QUARTERLY, not 6-hourly like the coverage board: the published cadence in
+# VALIDATION.md is quarterly (the underlying record is nightly and the live
+# view on reglens.info/methodology is always current), so running more often
+# would only churn commits without changing what the file promises.
+#
+# NO SECRETS. Public repository, and the two values the job needs are public
+# by design — the same SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY pair the
+# reglens.info browser bundle ships to every visitor. They are repository
+# VARIABLES; if either is unset the job fails loudly rather than committing a
+# broken record.
+
+name: Validation refresh
+
+on:
+  schedule:
+    # 08:10 UTC on the 1st of January, April, July, October — after that
+    # morning's 09:20 UTC nightly compute from the PREVIOUS day has long
+    # settled (the snapshot read is whatever the latest nightly wrote).
+    - cron: "10 8 1 1,4,7,10 *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Render and report without committing"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: validation-refresh
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Require configuration
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          missing=""
+          [ -n "$SUPABASE_URL" ] || missing="$missing SUPABASE_URL"
+          [ -n "$SUPABASE_PUBLISHABLE_KEY" ] || missing="$missing SUPABASE_PUBLISHABLE_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository variable(s):$missing. Set them under" \
+                 "Settings → Secrets and variables → Actions → Variables. Both are" \
+                 "public values (the same pair reglens.info ships to browsers), so" \
+                 "they belong in Variables, not Secrets."
+            exit 1
+          fi
+
+      - name: Fetch validation payload
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+          curl -sS --fail-with-body \
+               --retry 3 --retry-delay 5 --retry-all-errors \
+               --max-time 30 \
+               -X POST "${SUPABASE_URL%/}/rest/v1/rpc/get_public_validation" \
+               -H "apikey: ${SUPABASE_PUBLISHABLE_KEY}" \
+               -H "Authorization: Bearer ${SUPABASE_PUBLISHABLE_KEY}" \
+               -H "Content-Type: application/json" \
+               -d '{}' \
+               -o payload.json
+          echo "Fetched $(wc -c < payload.json) bytes"
+
+      - name: Render VALIDATION.md
+        # The renderer refuses a payload without exactly four tiers, so a
+        # technically-successful-but-empty response fails here instead of
+        # replacing the published record with a blank one.
+        run: node scripts/render-validation.mjs < payload.json > VALIDATION.md
+
+      - name: Report
+        run: |
+          {
+            echo "### Rendered validation record"
+            echo
+            echo "<details><summary>VALIDATION.md preview</summary>"
+            echo
+            cat VALIDATION.md
+            echo
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Detect change
+        id: diff
+        run: |
+          rm -f payload.json
+          # git status, not git diff: on the very first run VALIDATION.md is
+          # untracked and `git diff` ignores untracked files entirely.
+          if [ -z "$(git status --porcelain -- VALIDATION.md)" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "VALIDATION.md is unchanged — nothing to commit."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit
+        if: >-
+          steps.diff.outputs.changed == 'true' &&
+          (github.event_name == 'schedule' || inputs.dry_run == false)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add VALIDATION.md
+          git commit -m "Refresh VALIDATION.md from get_public_validation()"
+          git push
