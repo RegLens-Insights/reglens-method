@@ -255,9 +255,11 @@ Stated here rather than papered over.
   score *without* bumping it, so a published "rubric version" can currently
   understate what changed. Giving the rubric its own version string is open work.
 - **No published calibration yet.** Bills resolve, so passage-likelihood ratings
-  are checkable against realized outcomes. That backtest is planned as
-  `VALIDATION.md` and does not exist. Until it does, treat passage likelihood as
-  an unvalidated model judgment.
+  are checkable against realized outcomes. [VALIDATION.md](VALIDATION.md) now
+  holds that record and fixes the counting rules in advance — but every tier's
+  resolved sample is still zero, so it reports no enacted rates. The record
+  exists; the calibration does not. Until bills in the assessed window actually
+  resolve, treat passage likelihood as an unvalidated model judgment.
 - **Light-mode composites are unverifiable.** They come from the model rather than
   from weighted dimensions, so the server-side integrity guarantee that covers
   full analyses does not extend to them.
