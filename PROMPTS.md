@@ -5,8 +5,9 @@ The system prompts RegLens sends to the model, verbatim.
 Published in full because the rubric claim is only checkable if you can see what
 the model is actually asked. These are generated from the analyzer source rather
 than retyped: the weights, thresholds and scale anchors inside them are rendered
-from `supabase/functions/_shared/scoring.ts`, the same module the server uses to recompute a
-composite, so what the model is told and what the server applies provably match.
+from `supabase/functions/_shared/scoring.ts` — the same module the server uses
+to recompute a composite — so what the model is told and what the server applies
+provably match.
 
 **Prompt versions:** full `2026-07-30.1`, light `2026-07-30.1`.
 Every stored assessment records which produced it.
