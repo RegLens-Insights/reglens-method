@@ -36,14 +36,14 @@ enacted?**
 
 ## The record
 
-As of **2026-08-11** — the record began **2026-07-29**:
+As of **2026-10-01** — the record began **2026-07-29**:
 
 | Tier | Assessed | Unresolved | Excluded (hindsight / unverifiable) | Resolved sample | Enacted rate |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| High | 56 | 31 | 25 | 0 | — |
-| Medium | 375 | 117 | 258 | 0 | — |
+| High | 60 | 33 | 27 | 0 | — |
+| Medium | 374 | 116 | 258 | 0 | — |
 | Low | 29 | 29 | 0 | 0 | — |
-| Very Low | 69 | 54 | 15 | 0 | — |
+| Very Low | 67 | 52 | 15 | 0 | — |
 
 > **No prediction made before its bill's outcome has resolved yet.** The
 > corpus was analyzed largely after import, so the outcomes already on the
